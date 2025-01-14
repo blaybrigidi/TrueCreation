@@ -1,30 +1,34 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const config = require('../config/config');
+const User = require('./userModel');
+const Token = require('./tokenModel');
+const Analysis = require('./analysis');
 
-const sequelize = new Sequelize({
-  dialect: 'postgres',
-  host: process.env.DB_HOST,
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  logging: false
+const sequelize = new Sequelize(
+  config.database,
+  config.username,
+  config.password,
+  {
+    host: config.host,
+    dialect: config.dialect,
+    logging: false
+  }
+);
+
+const models = {
+  User: User(sequelize, Sequelize.DataTypes),
+  Token: Token(sequelize, Sequelize.DataTypes),
+  Analysis: Analysis(sequelize, Sequelize.DataTypes)
+};
+
+// Run associations if they exist
+Object.keys(models).forEach(modelName => {
+  if (models[modelName].associate) {
+    models[modelName].associate(models);
+  }
 });
-
-const User = require('./userModel')(sequelize);
-const Token = require('./tokenModel')(sequelize);
-const Analysis = require('./analysis')(sequelize);
-
-// Set up associations
-User.hasMany(Analysis);
-Analysis.belongsTo(User);
-
-// Token associations
-User.hasMany(Token);
-Token.belongsTo(User);
 
 module.exports = {
   sequelize,
-  User,
-  Token,
-  Analysis
+  ...models
 }; 

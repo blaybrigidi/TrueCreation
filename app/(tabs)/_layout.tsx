@@ -1,44 +1,42 @@
 import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import CustomTabBar from '../components/CustomTabBar';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#1A1A1A',
-          borderTopWidth: 0,
-        },
-        tabBarActiveTintColor: '#EE705D',
-        tabBarInactiveTintColor: '#666',
+        tabBarStyle: { display: 'none' }
       }}
+      tabBar={props => <CustomTabBar {...props} />}
+      initialRouteName="analyze"
     >
       <Tabs.Screen
-        name="index"
+        name="analyze"
         options={{
           title: 'Analyze',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="mic" size={24} color={color} />
-          ),
+          href: null
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
           title: 'Library',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="library-music" size={24} color={color} />
-          ),
+          href: null
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'Explore',
+          href: null
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="person" size={24} color={color} />
-          ),
+          href: null
         }}
       />
     </Tabs>

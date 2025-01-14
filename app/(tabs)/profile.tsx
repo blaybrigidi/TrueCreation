@@ -16,7 +16,7 @@ export default function ProfileScreen() {
   const loadUserData = async () => {
     try {
       console.log('Loading user data...');
-      const userDataString = await AsyncStorage.getItem('userToken');
+      const userDataString = await AsyncStorage.getItem('userData');
       console.log('User data from storage:', userDataString);
       
       if (userDataString) {
@@ -37,20 +37,22 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       console.log('Starting handleLogout...');
-      const userDataString = await AsyncStorage.getItem('userToken');
+      const userDataString = await AsyncStorage.getItem('userData');
       
       if (!userDataString) {
-        console.log('No userToken found in AsyncStorage');
-        throw new Error('No user token found');
+        console.log('No userData found in AsyncStorage');
+        router.replace('/_login' as any);
+        return;
       }
 
-      console.log('UserToken found:', userDataString);
+      console.log('UserData found:', userDataString);
       const userData = JSON.parse(userDataString);
       console.log('Parsed userData:', userData);
 
       if (!userData.token) {
         console.log('No token in userData');
-        throw new Error('No token found in user data');
+        router.replace('/_login' as any);
+        return;
       }
 
       console.log('Calling logoutUser with token:', userData.token);
@@ -58,21 +60,17 @@ export default function ProfileScreen() {
       console.log('Logout response:', response);
 
       if (response.success) {
-        console.log('Logout successful, removing token...');
-        await AsyncStorage.removeItem('userToken');
-        console.log('Token removed, redirecting to login...');
+        console.log('Logout successful, removing userData...');
+        await AsyncStorage.removeItem('userData');
+        console.log('UserData removed, redirecting to login...');
         router.replace('/_login' as any);
       } else {
         console.log('Logout failed:', response.error);
-        Alert.alert('Logout Failed', 'Unable to logout. Please try again.');
+        Alert.alert('Logout Failed', 'Please try again.');
       }
     } catch (error) {
       console.error('Logout error in component:', error);
-      // Remove token and redirect anyway if there's an error
-      console.log('Removing token due to error...');
-      await AsyncStorage.removeItem('userToken');
-      console.log('Token removed, redirecting to login...');
-      router.replace('/_login' as any);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
     }
   };
 

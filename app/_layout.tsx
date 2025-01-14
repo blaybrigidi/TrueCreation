@@ -34,7 +34,7 @@ export default function RootLayout() {
           animation: 'slide_from_right',
         }}
       >
-        {/* Auth & Onboarding Flow */}
+        {/* Auth Flow */}
         <Stack.Screen 
           name="_login" 
           options={{ 
@@ -43,7 +43,7 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-          name="_signup" 
+          name="(auth)/signup" 
           options={{ 
             headerShown: false,
             animation: 'slide_from_right',
@@ -52,7 +52,7 @@ export default function RootLayout() {
         
         {/* Onboarding (only for new users from signup) */}
         <Stack.Screen 
-          name="onboarding/index" 
+          name="(onboarding)" 
           options={{
             headerShown: false,
             gestureEnabled: false,

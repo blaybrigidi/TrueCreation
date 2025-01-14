@@ -1,15 +1,13 @@
-'use strict';
-
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('tokens', {
+    await queryInterface.createTable('Analyses', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      user_id: {
+      userId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -19,17 +17,19 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      token: {
-        type: Sequelize.STRING,
-        allowNull: false
+      sourceType: {
+        type: Sequelize.STRING(20),
+        allowNull: false,
+        defaultValue: 'file_upload'
       },
-      expires_at: {
-        type: Sequelize.DATE,
-        allowNull: false
+      status: {
+        type: Sequelize.STRING(20),
+        allowNull: false,
+        defaultValue: 'pending'
       },
-      last_used_at: {
-        type: Sequelize.DATE,
-        allowNull: false
+      result: {
+        type: Sequelize.JSON,
+        allowNull: true
       },
       created_at: {
         allowNull: false,
@@ -45,6 +45,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('tokens');
+    await queryInterface.dropTable('Analyses');
   }
 }; 

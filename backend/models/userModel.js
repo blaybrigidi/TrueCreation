@@ -20,11 +20,14 @@ module.exports = (sequelize) => {
     password: {
       type: DataTypes.STRING,
       allowNull: false,
-    },
+    }
   }, {
     sequelize,
     modelName: 'User',
     tableName: 'users',
+    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   });
 
   return User;

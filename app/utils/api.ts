@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import config from '../config';
 import { decryptData } from './crypto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = `${config.API_URL}/api/users`;  // Base API URL
 
@@ -19,6 +20,12 @@ interface RegisterUserData {
 interface LoginUserData {
   email: string;
   password: string;
+}
+
+export interface AnalysisResult {
+  tempo: number;
+  key: string;
+  timeSignature: string;
 }
 
 export const loginUser = async (credentials: LoginUserData) => {
@@ -266,5 +273,100 @@ export const logoutUser = async (token: string) => {
       success: false,
       error: 'Network error during logout'
     };
+  }
+};
+
+export async function analyzeRecording(uri: string, token: string): Promise<AnalysisResult> {
+  if (!uri) {
+    throw new Error('No recording URI provided');
+  }
+
+  try {
+    const formData = new FormData();
+    const filename = uri.split('/').pop()!;
+    
+    formData.append('recording', {
+      uri: uri,
+      name: filename,
+      type: 'audio/m4a'
+    } as any);
+
+    const response = await fetch(`${config.API_URL}/api/analyze/record`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+        'x-api-key': '049c7e635ebc61027458aff460a5f86aae6efbef0ef530d8c1124840baad282d',
+        'x-api-secret': '0827bf20cf7c9c10126f8216b19205d93d12fc42d4ad604610d96cad36069358'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to analyze recording');
+    }
+
+    const data = await response.json();
+    return data.result;
+  } catch (error) {
+    console.error('Analyze recording error:', error);
+    throw error;
+  }
+}
+
+export const analyzeFile = async (fileUri: string, token: string): Promise<AnalysisResult> => {
+  try {
+    const formData = new FormData();
+    const filename = fileUri.split('/').pop()!;
+    
+    formData.append('file', {
+      uri: fileUri,
+      name: filename,
+      type: `audio/${filename.split('.').pop()}`
+    } as any);
+
+    const response = await fetch(`${config.API_URL}/api/analyze/file`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+        'x-api-key': '049c7e635ebc61027458aff460a5f86aae6efbef0ef530d8c1124840baad282d',
+        'x-api-secret': '0827bf20cf7c9c10126f8216b19205d93d12fc42d4ad604610d96cad36069358'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to analyze file');
+    }
+
+    const data = await response.json();
+    return data.result;
+  } catch (error) {
+    console.error('Analyze file error:', error);
+    throw error;
+  }
+};
+
+export const getAnalysisHistory = async (token: string): Promise<AnalysisResult[]> => {
+  try {
+    const response = await fetch(`${config.API_URL}/api/analyze/history`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-api-key': '049c7e635ebc61027458aff460a5f86aae6efbef0ef530d8c1124840baad282d',
+        'x-api-secret': '0827bf20cf7c9c10126f8216b19205d93d12fc42d4ad604610d96cad36069358'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch analysis history');
+    }
+
+    const data = await response.json();
+    return data.analyses;
+  } catch (error) {
+    console.error('Get analysis history error:', error);
+    throw error;
   }
 }; 

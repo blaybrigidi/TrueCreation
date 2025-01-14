@@ -1,8 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
-import { useRouter, Router } from 'expo-router';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { registerUser } from './utils/api';
+import { registerUser } from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CountryPicker, { Country, CountryCode } from 'react-native-country-picker-modal';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -11,6 +12,14 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [countryCode, setCountryCode] = useState<CountryCode>('US');
+  const [callingCode, setCallingCode] = useState('1');
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+  const onSelectCountry = (country: Country) => {
+    setCountryCode(country.cca2);
+    setCallingCode(country.callingCode[0]);
+  };
 
   const handleSignUp = async () => {
     // Basic validation
@@ -25,27 +34,33 @@ export default function SignUpScreen() {
     }
 
     try {
+      const fullPhone = `+${callingCode}${phone.replace(/[^0-9]/g, '')}`;
       const response = await registerUser({
         name,
         email,
-        phone,
+        phone: fullPhone,
         password
       });
 
       if (response.success) {
-        console.log('Registration successful, storing user data...');
-        await AsyncStorage.setItem('userToken', JSON.stringify({
-          token: response.user.token,
-          name: response.user.name,
-          email: response.user.email
+        await AsyncStorage.setItem('userData', JSON.stringify({
+          ...response.user,
+          isFirstTimeUser: true
         }));
-        router.replace('/(tabs)' as any);
+        console.log('Redirecting to onboarding...');
+        try {
+          await router.replace('/(onboarding)' as any);
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          // Fallback navigation
+          router.replace('/onboarding/index' as any);
+        }
       } else {
-        alert(response.error || 'Registration failed');
+        Alert.alert('Error', response.error || 'Failed to create account');
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      alert('Failed to register');
+      console.error('Signup error:', error);
+      Alert.alert('Error', 'Failed to create account');
     }
   };
 
@@ -54,7 +69,7 @@ export default function SignUpScreen() {
       {/* Top Section */}
       <View style={{ padding: 24, marginTop: 60 }}>
         <TouchableOpacity 
-          onPress={() => router.back()}
+          onPress={() => router.push('/_login' as any)}
           style={{ marginBottom: 16 }}
         >
           <Text style={{ color: '#666', fontSize: 16 }}>← Back to login</Text>
@@ -127,7 +142,62 @@ export default function SignUpScreen() {
             />
           </View>
 
-          <View>
+          {/* Phone Input Section */}
+          <View style={{
+            flexDirection: 'row',
+            backgroundColor: '#000',
+            borderRadius: 12,
+            alignItems: 'center',
+            height: 50, // Fixed height
+          }}>
+            <TouchableOpacity
+              onPress={() => setShowCountryPicker(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 15,
+                height: '100%',
+                borderRightWidth: 1,
+                borderRightColor: '#333',
+              }}
+            >
+              <CountryPicker
+                withFilter={true}
+                withFlag={true}
+                withCallingCode={true}
+                withEmoji={false}
+                withModal={true}
+                withFlagButton={true}
+                withCloseButton={true}
+                onSelect={onSelectCountry}
+                countryCode={countryCode || 'US'}
+                visible={showCountryPicker}
+                onClose={() => setShowCountryPicker(false)}
+                containerButtonStyle={{
+                  alignItems: 'center',
+                }}
+                theme={{
+                  backgroundColor: '#1A1A1A',
+                  primaryColor: '#EE705D',
+                  primaryColorVariant: '#EE705D',
+                  fontSize: 16,
+                  fontFamily: undefined,
+                  filterPlaceholderTextColor: '#666',
+                  activeOpacity: 0.7,
+                  itemHeight: 50,
+                  onBackgroundTextColor: '#FFF'
+                }}
+                modalProps={{
+                  animationType: "slide"
+                }}
+              />
+              <Text style={{ 
+                color: '#FFF', 
+                fontSize: 16, 
+                marginLeft: 8 
+              }}>+{callingCode}</Text>
+            </TouchableOpacity>
+            
             <TextInput
               placeholder="Phone Number"
               value={phone}
@@ -135,9 +205,9 @@ export default function SignUpScreen() {
               keyboardType="phone-pad"
               placeholderTextColor="#666"
               style={{
-                backgroundColor: '#000',
-                padding: 15,
-                borderRadius: 12,
+                flex: 1,
+                height: '100%',
+                paddingHorizontal: 15,
                 color: '#FFF',
                 fontSize: 16,
               }}
@@ -196,71 +266,8 @@ export default function SignUpScreen() {
               Create Account
             </Text>
           </TouchableOpacity>
-
-          <Text style={{ 
-            color: '#666', 
-            textAlign: 'center',
-            marginTop: 20,
-            marginBottom: 20 
-          }}>
-            Or sign up with
-          </Text>
-
-          {/* Social Login Buttons */}
-          <View style={{ 
-            flexDirection: 'row', 
-            justifyContent: 'center',
-            gap: 20
-          }}>
-            <TouchableOpacity
-              style={{
-                padding: 12,
-                borderRadius: 12,
-                backgroundColor: '#000',
-                width: 50,
-                height: 50,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              <Image 
-                source={require('../assets/images/google.png')} 
-                style={{ width: 24, height: 24 }}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                padding: 12,
-                borderRadius: 12,
-                backgroundColor: '#000',
-                width: 50,
-                height: 50,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              <Image 
-                source={require('../assets/images/apple.png')} 
-                style={{ width: 24, height: 24 }}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Terms and Conditions */}
-          <Text style={{ 
-            color: '#666', 
-            textAlign: 'center',
-            fontSize: 12,
-            marginTop: 20
-          }}>
-            By signing up, you agree to our{' '}
-            <Text style={{ color: '#EE705D' }}>Terms of Service</Text>
-            {' '}and{' '}
-            <Text style={{ color: '#EE705D' }}>Privacy Policy</Text>
-          </Text>
         </View>
       </View>
     </View>
   );
-}
+} 

@@ -21,7 +21,7 @@ export default function LoginScreen() {
           name: response.user.name,
           email: response.user.email
         }));
-        router.replace('/(tabs)' as any);
+        router.replace('/(tabs)/analyze' as any);
       } else {
         Alert.alert('Login Failed', response.error || 'Invalid credentials');
       }
@@ -120,7 +120,7 @@ export default function LoginScreen() {
             <Text style={{ color: '#666' }}>
               Don't have an account?
             </Text>
-            <TouchableOpacity onPress={() => router.push('/_signup')}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/signup' as any)}>
               <Text style={{ color: '#EE705D', fontWeight: 'bold' }}>
                 Sign Up
               </Text>

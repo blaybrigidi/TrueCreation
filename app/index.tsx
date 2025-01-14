@@ -27,19 +27,24 @@ export default function SplashScreen() {
     // Check authentication status
     const checkAuth = async () => {
       try {
-        const userToken = await AsyncStorage.getItem('userToken');
+        const userData = await AsyncStorage.getItem('userData');
         
         // Navigate after animation completes
         setTimeout(() => {
-          if (userToken) {
-            router.replace('/(tabs)');
+          if (userData) {
+            const parsedData = JSON.parse(userData);
+            if (parsedData.isFirstTimeUser) {
+              router.replace('/(onboarding)' as any);
+            } else {
+              router.replace('/(tabs)' as any);
+            }
           } else {
-            router.replace('/_login');
+            router.replace('/_login' as any);
           }
         }, 2500);
       } catch (error) {
         console.error('Error checking auth:', error);
-        router.replace('/_login');
+        router.replace('/_login' as any);
       }
     };
 

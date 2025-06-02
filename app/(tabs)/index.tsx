@@ -3,7 +3,7 @@ import { useState, useRef } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
-import { searchAudio, SearchResult } from '../utils/api';
+import { searchAudio, SearchResult } from '../../utils/api';
 
 export default function HomeScreen() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -28,34 +28,26 @@ export default function HomeScreen() {
   };
 
   const startAnalysis = async (fileUri: string) => {
-    setIsAnalyzing(true);
-    // Start pulse animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
     try {
-      const result = await searchAudio(fileUri);
+      setIsAnalyzing(true);
+      console.log('Starting analysis for:', fileUri);
+      
+      const results = await searchAudio(fileUri);
+      console.log('Analysis results:', results);
+      
+      // Navigate to analysis screen with results
       router.push({
         pathname: '/analysis',
-        params: { results: JSON.stringify(result) }
+        params: { 
+          results: JSON.stringify(results),
+          audioUri: fileUri 
+        }
       });
     } catch (error) {
-      alert('Analysis failed: ' + (error as Error).message);
+      console.error('Analysis failed:', error);
+      alert(`Analysis failed: ${error}`);
     } finally {
       setIsAnalyzing(false);
-      pulseAnim.setValue(1);
     }
   };
 

@@ -1,12 +1,15 @@
 import * as FileSystem from 'expo-file-system';
-import config from '../config';
+import config from '../app/config';
 import { decryptData } from './crypto';
 
-const API_URL = `${config.API_URL}/api/users`;  // Base API URL
+const API_URL = `${config.API_URL}/api/users`;  // Base API URL for user auth
+const TONES_API_URL = 'http://127.0.0.1:8000';  // Python tones backend for audio processing
 
 export interface SearchResult {
   songName: string;
   matchRatio?: number;
+  songId?: string;
+  timeDelta?: number;
 }
 
 interface RegisterUserData {
@@ -145,13 +148,15 @@ export const uploadAudio = async (fileUri: string) => {
     const formData = new FormData();
     const filename = fileUri.split('/').pop()!;
     
+    // Create proper file object for the tones backend
     formData.append('file', {
       uri: fileUri,
       name: filename,
       type: `audio/${filename.split('.').pop()}`
     } as any);
+    formData.append('filename', filename);
     
-    const response = await fetch(`${API_URL}/upload`, {
+    const response = await fetch(`${TONES_API_URL}/upload`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -161,25 +166,32 @@ export const uploadAudio = async (fileUri: string) => {
 
     const data = await response.json();
     if (data.err) throw new Error(data.err);
-    return data.data;
+    
+    return {
+      success: true,
+      message: data.data,
+      toneId: data.toneId || null
+    };
   } catch (error) {
     console.error('Upload error:', error);
-    throw error;
+    throw new Error(`Failed to upload audio: ${error}`);
   }
 };
 
-export const searchAudio = async (fileUri: string): Promise<SearchResult | SearchResult[]> => {
+export const searchAudio = async (fileUri: string): Promise<SearchResult[]> => {
   try {
     const formData = new FormData();
     const filename = fileUri.split('/').pop()!;
     
+    // Create proper file object for the tones backend
     formData.append('file', {
       uri: fileUri,
       name: filename,
       type: `audio/${filename.split('.').pop()}`
     } as any);
+    formData.append('filename', filename);
 
-    const response = await fetch(`${API_URL}/search`, {
+    const response = await fetch(`${TONES_API_URL}/search`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -190,18 +202,61 @@ export const searchAudio = async (fileUri: string): Promise<SearchResult | Searc
     const data = await response.json();
     if (data.err) throw new Error(data.err);
     
-    // Handle different response formats
+    // Handle the tones backend response format
+    if (!data.data) {
+      return [];
+    }
+
+    // Handle different response formats from the tones backend
     if (typeof data.data === 'string') {
-      return { songName: data.data };
+      return [{ songName: data.data }];
     }
     
-    return data.data.map(([name, ratio]: [string, number]) => ({
-      songName: name,
-      matchRatio: ratio
-    }));
+    if (Array.isArray(data.data)) {
+      return data.data.map((result: any): SearchResult => {
+        // Handle string results
+        if (typeof result === 'string') {
+          return { songName: result };
+        }
+        
+        // Handle CoherencyResult format: [SongId, SongName, CoherencyScore, TimeDelta]
+        if (Array.isArray(result) && result.length >= 2) {
+          return {
+            songId: result[0],
+            songName: result[1],
+            matchRatio: result.length > 2 ? result[2] : undefined,
+            timeDelta: result.length > 3 ? result[3] : undefined
+          };
+        }
+        
+        // Handle object format (CoherencyResult class)
+        if (result && typeof result === 'object') {
+          return {
+            songId: result.SongId || result.songId,
+            songName: result.SongName || result.songName || 'Unknown',
+            matchRatio: result.CoherencyScore || result.matchRatio,
+            timeDelta: result.TimeDelta || result.timeDelta
+          };
+        }
+        
+        return { songName: result.toString() };
+      });
+    }
+    
+    // Fallback for single object result
+    if (typeof data.data === 'object') {
+      return [{
+        songId: data.data.SongId || data.data.songId,
+        songName: data.data.SongName || data.data.songName || 'Unknown',
+        matchRatio: data.data.CoherencyScore || data.data.matchRatio,
+        timeDelta: data.data.TimeDelta || data.data.timeDelta
+      }];
+    }
+    
+    return [{ songName: data.data.toString() }];
   } catch (error) {
     console.error('Search error:', error);
-    throw error;
+    throw new Error(`Failed to search audio: ${error}`);
   }
 };
 

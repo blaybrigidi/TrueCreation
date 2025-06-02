@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
 import { useRouter, Router } from 'expo-router';
 import { useState } from 'react';
-import { registerUser } from './utils/api';
+import { registerUser } from '../utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SignUpScreen() {

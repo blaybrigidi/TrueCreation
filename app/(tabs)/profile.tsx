@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logoutUser } from '../utils/api';
+import { logoutUser } from '../../utils/api';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
